@@ -1,6 +1,8 @@
-debugSource("ABS_eco_data2.R")
-debugSource("stp_data_clean.R")
-debugSource("run_all_v2.R")
+
+debugSource("C:/Users/nchandra/Documents/dev_nik/scripts/under_development/ABS/ABS_eco_data2.R")
+debugSource("C:/Users/nchandra/Documents/dev_nik/employment_adhoc/stp_data_clean.R")
+debugSource("C:/Users/nchandra/Documents/dev_nik/employment_adhoc/read_jobkeeper_local.R")
+debugSource("C:/Users/nchandra/Documents/dev_nik/scripts/brief_v2/run_all_v2.R")
 
 abs_data <- eco_tables_abs()
 
@@ -102,6 +104,7 @@ industry_health_qtr <- profit_ratio %>%
   left_join(wages_gross,by = c("date","industry")) %>%
   left_join(gdp_join,by = c("date","industry")) %>%
   left_join(sales, by = c("date","industry") ) %>%
+  filter(date > "2008-01-01") %>%
   filter(!is.na(.data$profit_ratio) ) %>%
   filter(!is.na(.data$wages) ) %>%
   filter(!is.na(.data$sales) ) %>%
@@ -164,11 +167,24 @@ industry_health_qtr_list2 %>%
   ggplot(aes(x = date)) +
   geom_line(aes(y = differene_covid, color = industry))
 
+raw_industry_health_qtr <- gdp_indus %>%
+  filter(!is.nan(gdp_change_yr_yr)) %>%
+  group_by(industry) %>%
+  filter(date > "2008-01-01") %>%
+  mutate(
+    gva_index = gdp_change_yr_yr - 
+      mean(ifelse(date < "2020-03-01",gdp_change_yr_yr,NA ), na.rm = TRUE)
+  ) %>%
+  mutate(month_date = ymd( paste0(year(date),"-",month(date), "-01") ) ) %>%
+  rename(gva_date = date) 
+  
+
 #-----------------------STP BY INDUSTRY
 
 
-stp_data_indus <- read.xlsx("abs data/stp_industry_2021-01-06.xlsx",sheet = 2,startRow = 6,detectDates = TRUE) %>%
+stp_data_indus <- read.xlsx("abs data/stp_industry_2021-01-20.xlsx",sheet = 2,startRow = 6,detectDates = TRUE) %>%
   as_tibble() %>% clean_stp_indus() %>%
+  rename(sub_division = subdivision) %>%
   mutate(industry = trimws(industry)) %>%
   mutate(industry = stringr::str_remove(industry, "[:upper:]-") ) %>%
   mutate(industry = gsub(x = industry,pattern = "\\&", replacement = "and") ) %>%
@@ -180,7 +196,7 @@ stp_data_indus <- read.xlsx("abs data/stp_industry_2021-01-06.xlsx",sheet = 2,st
   mutate(sub_division = trimws(sub_division))%>%
   mutate(sub_division = tolower(sub_division))
 
-stp_national <- read.xlsx("abs data/stp_national.xlsx",sheet = 2,startRow = 6,detectDates = TRUE) %>%
+stp_national <- read.xlsx("abs data/stp_national-2021-01-20.xlsx",sheet = 2,startRow = 6,detectDates = TRUE) %>%
   as_tibble() %>% clean_stp_national() %>%
   rename(state = state_or_territory,
          industry = industry_division) %>%
@@ -216,7 +232,8 @@ stp_data_indus2 <- stp_data_indus %>%
   mutate(
     difference_since_covid = value - average_pre_covid
   ) %>%
-  filter(!is.na(value)) 
+  filter(!is.na(value)) %>%
+  mutate(month_date = ymd( paste0(paste0(year(date),"-",month(date), "-01")) ) ) 
 
 last_3_dates <- stp_data_indus2 %>% 
   distinct(date) %>% 
@@ -224,14 +241,33 @@ last_3_dates <- stp_data_indus2 %>%
 
 stp_data_gdp <- stp_data_indus2 %>%
   filter(date %in% last_3_dates$date ) %>%
-  left_join(industry_health_qtr_list_max_date, by = "industry") %>%
+  left_join(raw_industry_health_qtr, by = c("industry","month_date") ) %>%
   mutate(industry = str_wrap(industry,15) ) %>%
   mutate(industry = stringr::str_to_title(industry)) %>%
-  mutate(label_x = ifelse(date.x < max(date.x), NA, industry) ) %>%
-  mutate(latest_point = ifelse(date.x < max(date.x), NA, difference_since_covid)  )
+  mutate(label_x = ifelse(date < max(date), NA, industry) ) %>%
+  mutate(latest_point = ifelse(date < max(date), NA, difference_since_covid)  ) %>%
+  group_by(industry) %>%
+  fill(gva_index, .direction = "down") %>%
+  fill(gdp_change_yr_yr, .direction = "down")
+
+min_plot_gva_value <- stp_data_gdp %>%
+  ungroup() %>%
+  filter(gva_index == min(gva_index)) %>%
+  select(gva_index)
+
+min_plot_stp_value <- stp_data_gdp %>%
+  ungroup() %>%
+  filter(difference_since_covid == min(difference_since_covid)) %>%
+  select(difference_since_covid)
+
+max_plot_gva_value <- stp_data_gdp %>%
+  ungroup() %>%
+  filter(gva_index == max(gva_index)) %>%
+  select(gva_index)
+
 
 stp_data_gdp %>% 
-  cah_plot(aes(x = differene_covid, y = difference_since_covid) ) +
+  cah_plot(aes(x = gva_index, y = difference_since_covid) ) +
   geom_hline(yintercept = 0, linetype = "dashed")+
   geom_vline(xintercept = 0, linetype = "dashed")+
   geom_point(aes(y =  latest_point,color =  industry ),size = 2, show.legend = FALSE) +
@@ -240,20 +276,22 @@ stp_data_gdp %>%
   # geom_text(aes(x = -0.22,y = -13, label = "Labour Force Not Recovered\nIndustry GDP\nStruggling"), size = 3) +
   # geom_text(aes(x = 0.15,y = 10, label = "Labour Force Recovered\nIndustry GDP\nRecovered"), size = 3) +
   # geom_text(aes(x = 0.15,y = -13, label = "Labour Force Not Recovered\nIndustry GDP\nRecovered"), size = 3) +
-  geom_label_repel(aes(label = label_x,color =  industry), size = 3.5,
-                   force_pull = 10, force = 50, show.legend = FALSE) +
-  ylim(-13,12)+
+  geom_label_repel(aes(label = label_x,color =  industry), size = 2.5,
+                   force_pull = 1, force = 40, show.legend = FALSE) +
+  ylim(min_plot_stp_value$difference_since_covid[1] - 0.01,12)+
   theme_minimal() + 
-  ylab( ("Labour Force Index (Indexed from Mar 2020)\n[Pre-Covid - Current]") ) +
-  xlab( ("Business Performance Index\n[Pre-Covid - Current]") ) +
-  #scale_x_continuous(labels = scales::percent_format(accuracy = 1),limits = c(-0.3,0.22) ) + 
+  ylab( ("Labour Force Index (Indexed from Feb 2020)\n[Pre-Covid - Current]") ) +
+  xlab( ("Gross Value Added\n[Pre-Covid - Current]") ) +
+  theme(axis.title = element_text(size = 12))+
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1),
+                     limits = c(min_plot_gva_value$gva_index[1] - 0.02,0.17) ) + 
   #labs(title = "Industry Recovery Tracker")+
   ggsave(filename = file.path(G_output_path,
                                 strftime(G_timestamp_declaration,
                                          "labour_risk_matrix_%Y_%m_%d_%P.png")),
          dpi = 400,
          width = 8,
-         height = 5,
+         height = 5.0,
          device = "png",
          type = "cairo",
          scale = 1.1) 
