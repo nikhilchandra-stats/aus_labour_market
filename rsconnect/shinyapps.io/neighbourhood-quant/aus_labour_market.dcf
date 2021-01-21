@@ -1,0 +1,13 @@
+name: aus_labour_market
+title: aus_labour_market
+username:
+account: neighbourhood-quant
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3499358
+bundleId: 4124108
+url: https://neighbourhood-quant.shinyapps.io/aus_labour_market/
+when: 1611199570.63312
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: ABS_eco_data2.R|database_connection.R|duration_job_age.xlsx|duration_job_search.xlsx|get_all_labour_gender.R|get_local_abs.R|industry_stp_graph.R|labour_by_age_detailed.R|LICENSE|normal_dist_bayesian.R|not_in_labour_force.xlsx|plot_summaries.R|plotting_labour.RData|prepare_plot_data.R|README.md|run_all_v2.R|stp_data_clean.R|stp_industry_2021-01-20.xlsx|stp_national-2021-01-20.xlsx
