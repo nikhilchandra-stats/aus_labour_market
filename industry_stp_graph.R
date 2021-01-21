@@ -1,8 +1,7 @@
 
-debugSource("C:/Users/nchandra/Documents/dev_nik/scripts/under_development/ABS/ABS_eco_data2.R")
-debugSource("C:/Users/nchandra/Documents/dev_nik/employment_adhoc/stp_data_clean.R")
-debugSource("C:/Users/nchandra/Documents/dev_nik/employment_adhoc/read_jobkeeper_local.R")
-debugSource("C:/Users/nchandra/Documents/dev_nik/scripts/brief_v2/run_all_v2.R")
+source("ABS_eco_data2.R")
+source("run_all_v2.R")
+source("get_local_abs.R")
 
 abs_data <- eco_tables_abs()
 
