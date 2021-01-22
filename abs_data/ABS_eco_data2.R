@@ -280,62 +280,62 @@ eco_tables_abs <- function(long_or_wide = "wide"){
   return_list[[12]] = list("gross value added by industry 5206.0 table 6" ,dta_value_added_by_industry )
 
   # ## state final demand measures the total value of goods sold in a state to buyers who wish to consume them
-  dta_state_final_demand <- readabs::read_abs("5206.0", tables = c(26,27,28,29,30,31,32,33) ) %>%
-    select(date,series,value,unit,series_type,frequency,table_title)
-
-  dta_state_final_demand_col_1 <- data.frame( stringr::str_split_fixed( dta_state_final_demand$series,pattern = ";",n = 4 ) )[,1:2]
-  names(dta_state_final_demand_col_1) = c("sector","drop1")
-  dta_state_final_demand_measure <- data.frame( stringr::str_split_fixed( dta_state_final_demand_col_1$drop1,pattern = ":",n = 2 ) )[,1:2]
-  names(dta_state_final_demand_measure) = c("consumption_type","measure")
-  dta_state_final_demand_states <- data.frame( stringr::str_split_fixed( dta_state_final_demand$table_title,pattern = ":",n = 2 ) )[,1:2]
-  names(dta_state_final_demand_states)= c("drop2","state")
-
-  binding_frame <- dta_state_final_demand_col_1 %>% bind_cols(dta_state_final_demand_measure) %>%
-    bind_cols(dta_state_final_demand_states) %>% select(-c(drop1,drop2))
-
-  dta_state_final_demand <- dta_state_final_demand %>%
-    select(date,value,unit,frequency,series_type) %>% bind_cols(binding_frame)
-
-  dta_state_final_demand <-
-    dta_state_final_demand %>%
-    mutate(
-
-      sector = trimws(sector),
-      consumption_type = trimws(consumption_type),
-      measure = trimws(measure),
-      state = trimws(state)
-
-    )
-
-  return_list[[13]] = list( "state final deman total value of goods sold 5206 tables 26-33",dta_state_final_demand )
+  # dta_state_final_demand <- readabs::read_abs("5206.0", tables = c(26,27,28,29,30,31,32,33) ) %>%
+  #   select(date,series,value,unit,series_type,frequency,table_title)
+  # 
+  # dta_state_final_demand_col_1 <- data.frame( stringr::str_split_fixed( dta_state_final_demand$series,pattern = ";",n = 4 ) )[,1:2]
+  # names(dta_state_final_demand_col_1) = c("sector","drop1")
+  # dta_state_final_demand_measure <- data.frame( stringr::str_split_fixed( dta_state_final_demand_col_1$drop1,pattern = ":",n = 2 ) )[,1:2]
+  # names(dta_state_final_demand_measure) = c("consumption_type","measure")
+  # dta_state_final_demand_states <- data.frame( stringr::str_split_fixed( dta_state_final_demand$table_title,pattern = ":",n = 2 ) )[,1:2]
+  # names(dta_state_final_demand_states)= c("drop2","state")
+  # 
+  # binding_frame <- dta_state_final_demand_col_1 %>% bind_cols(dta_state_final_demand_measure) %>%
+  #   bind_cols(dta_state_final_demand_states) %>% select(-c(drop1,drop2))
+  # 
+  # dta_state_final_demand <- dta_state_final_demand %>%
+  #   select(date,value,unit,frequency,series_type) %>% bind_cols(binding_frame)
+  # 
+  # dta_state_final_demand <-
+  #   dta_state_final_demand %>%
+  #   mutate(
+  # 
+  #     sector = trimws(sector),
+  #     consumption_type = trimws(consumption_type),
+  #     measure = trimws(measure),
+  #     state = trimws(state)
+  # 
+  #   )
+# 
+#   return_list[[13]] = list( "state final deman total value of goods sold 5206 tables 26-33",dta_state_final_demand )
 
   # ## state final demand measures the total value of goods sold in a state to buyers who wish to consume them
-  dta_state_final_demand_summary <- readabs::read_abs("5206.0", tables = c(25) ) %>%
-    select(date,series,value,unit,series_type,frequency,table_title)
-
-  dta_state_final_demand_summary_col_1 <- data.frame( stringr::str_split_fixed( dta_state_final_demand_summary$series,pattern = ";",n = 4 ) )[,1:3]
-  names(dta_state_final_demand_summary_col_1) = c("state","sector","consumption_type")
-  dta_state_final_demand_summary_measure <- data.frame( stringr::str_split_fixed( dta_state_final_demand_summary$table_title,pattern = ":",n = 2 ) )[,1:2]
-  names(dta_state_final_demand_summary_measure) = c("drop1","measure")
-
-  bind_frame <- bind_cols(dta_state_final_demand_summary_col_1,dta_state_final_demand_summary_measure) %>%
-    select(-drop1)
-
-  dta_state_final_demand_summary <- dta_state_final_demand_summary %>%
-    select(date,series_type,unit,value,frequency,series_type) %>% bind_cols(bind_frame)
-
-  dta_state_final_demand_summary <-
-    dta_state_final_demand_summary %>%
-    mutate(
-
-      state = trimws(state),
-      sector = trimws(sector),
-      consumption_type = trimws(consumption_type),
-      measure = trimws(measure)
-
-    )
-
-  return_list[[14]] = list( "state final deman total value of goods sold 5206 tables 25",dta_state_final_demand_summary )
+  # dta_state_final_demand_summary <- readabs::read_abs("5206.0", tables = c(25) ) %>%
+  #   select(date,series,value,unit,series_type,frequency,table_title)
+  # 
+  # dta_state_final_demand_summary_col_1 <- data.frame( stringr::str_split_fixed( dta_state_final_demand_summary$series,pattern = ";",n = 4 ) )[,1:3]
+  # names(dta_state_final_demand_summary_col_1) = c("state","sector","consumption_type")
+  # dta_state_final_demand_summary_measure <- data.frame( stringr::str_split_fixed( dta_state_final_demand_summary$table_title,pattern = ":",n = 2 ) )[,1:2]
+  # names(dta_state_final_demand_summary_measure) = c("drop1","measure")
+  # 
+  # bind_frame <- bind_cols(dta_state_final_demand_summary_col_1,dta_state_final_demand_summary_measure) %>%
+  #   select(-drop1)
+  # 
+  # dta_state_final_demand_summary <- dta_state_final_demand_summary %>%
+  #   select(date,series_type,unit,value,frequency,series_type) %>% bind_cols(bind_frame)
+  # 
+  # dta_state_final_demand_summary <-
+  #   dta_state_final_demand_summary %>%
+  #   mutate(
+  # 
+  #     state = trimws(state),
+  #     sector = trimws(sector),
+  #     consumption_type = trimws(consumption_type),
+  #     measure = trimws(measure)
+  # 
+  #   )
+  # 
+  # return_list[[14]] = list( "state final deman total value of goods sold 5206 tables 25",dta_state_final_demand_summary )
 
   # ## Total factor income by indusry and princpial components
   dta_total_factor_inc_industry <- readabs::read_abs("5204.0", tables = c(46) ) %>%
@@ -840,6 +840,24 @@ eco_tables_abs <- function(long_or_wide = "wide"){
   
   return_list[[33]] = list("Emp and under emp by industry and sex 6202.0 tables 19" ,dta_emp_under_emp_indus3 )
   
+  
+  #----------------------------------------------------------ALL INDUS OCC
+  indus_occ_gender_state <- 
+    readabs::download_abs_data_cube(catalogue_string = "labour-force-australia-detailed", cube = "EQ06" 
+  ) %>%read.xlsx(sheet = 3,startRow = 4,detectDates = TRUE) %>%
+    as_tibble() 
+  
+  names(indus_occ_gender_state) = c("month_date","sex","state",
+                                    "industry","full_time",
+                                    "part_time","hours_full_time","hours_part_time")
+  
+  indus_occ_gender_state2 <- indus_occ_gender_state %>%
+    mutate(industry = trimws(industry) ) %>%
+    mutate(state = trimws(state))%>%
+    mutate(sex = trimws(sex))%>%
+    mutate(industry = gsub(x = industry,pattern = "\\&", replacement = "and") )
+  
+  return_list[[34]]
   
   return(return_list)    
   

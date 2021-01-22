@@ -1,7 +1,9 @@
-function(.data = load("abs_data.RData")){
+load("temp_dta.RData")
+
+function(.data = returned_data ){
   
 #-----------------------GDP BY INDUSTRY
-gdp_indus <- abs_data[[12]][[2]] %>%
+gdp_indus <- .data[[12]][[2]] %>%
   mutate(sector = trimws(sector)) %>%
   mutate(sector = stringr::str_remove(sector, "\\(") ) %>%
   mutate(sector = stringr::str_remove(sector, "\\)") ) %>%
@@ -30,7 +32,7 @@ gdp_indus_max_date <- gdp_indus %>%
   mutate(gdp_unit = "millions")
 
 #-----------------------Business profit Ratio
-profit_ratio <- abs_data[[21]][[2]] %>%
+profit_ratio <- .data[[21]][[2]] %>%
   dplyr::select(date,industry,value) %>%
   rename(profit_ratio = value) %>%
   mutate(industry = trimws(industry)) %>%
@@ -41,7 +43,7 @@ profit_ratio <- abs_data[[21]][[2]] %>%
   mutate(industry = tolower(industry))
 
 #-----------------------Business sales 
-profit_ratio <- abs_data[[23]][[2]] %>%
+profit_ratio <- .data[[23]][[2]] %>%
   filter(series_type == "Seasonally Adjusted") %>%
   dplyr::select(date,industry,value) %>%
   rename(profit_ratio = value) %>%
@@ -54,7 +56,7 @@ profit_ratio <- abs_data[[23]][[2]] %>%
 
 
 #-----------------------Business sales 
-sales <- abs_data[[24]][[2]] %>%
+sales <- .data[[24]][[2]] %>%
   filter(series_type == "Seasonally Adjusted") %>%
   filter(measure == "Sales") %>%
   dplyr::select(date,industry,value) %>%
@@ -68,7 +70,7 @@ sales <- abs_data[[24]][[2]] %>%
 
 
 #-----------------------Business GROSS profit 
-profit_gross <- abs_data[[22]][[2]] %>%
+profit_gross <- .data[[22]][[2]] %>%
   filter(series_type == "Seasonally Adjusted") %>%
   dplyr::select(date,industry,value) %>%
   rename(gross_profit = value) %>%
@@ -79,7 +81,7 @@ profit_gross <- abs_data[[22]][[2]] %>%
   mutate(industry = trimws(industry))%>%
   mutate(industry = tolower(industry)) 
 #-----------------------Business GROSS profit 
-wages_gross <- abs_data[[23]][[2]] %>%
+wages_gross <- .data[[23]][[2]] %>%
   filter(series_type == "Seasonally Adjusted") %>%
   dplyr::select(date,industry,value) %>%
   rename(wages = value) %>%
@@ -166,18 +168,17 @@ raw_industry_health_qtr <- gdp_indus %>%
   group_by(industry) %>%
   filter(date > "2008-01-01") %>%
   mutate(
-    gva_index = gdp_change_yr_yr - 
+    gva_index = gdp_change_yr_yr -
       mean(ifelse(date < "2020-03-01",gdp_change_yr_yr,NA ), na.rm = TRUE)
   ) %>%
   mutate(month_date = ymd( paste0(year(date),"-",month(date), "-01") ) ) %>%
-  rename(gva_date = date) 
+  rename(gva_date = date)
 
 
 #-----------------------STP BY INDUSTRY
 
 
-stp_data_indus <- read.xlsx("stp_industry_2021-01-20.xlsx",sheet = 2,startRow = 6,detectDates = TRUE) %>%
-  as_tibble() %>% clean_stp_indus() %>%
+stp_data_indus <- .data[[34]] %>%
   rename(sub_division = subdivision) %>%
   mutate(industry = trimws(industry)) %>%
   mutate(industry = stringr::str_remove(industry, "[:upper:]-") ) %>%
@@ -190,8 +191,7 @@ stp_data_indus <- read.xlsx("stp_industry_2021-01-20.xlsx",sheet = 2,startRow = 
   mutate(sub_division = trimws(sub_division))%>%
   mutate(sub_division = tolower(sub_division))
 
-stp_national <- read.xlsx("stp_national-2021-01-20.xlsx",sheet = 2,startRow = 6,detectDates = TRUE) %>%
-  as_tibble() %>% clean_stp_national() %>%
+stp_national <- .data[[36]]%>%
   rename(state = state_or_territory,
          industry = industry_division) %>%
   mutate(industry = trimws(industry)) %>%
@@ -203,7 +203,11 @@ stp_national <- read.xlsx("stp_national-2021-01-20.xlsx",sheet = 2,startRow = 6,
   mutate(state = stringr::str_remove(state, "[:upper:]-") ) %>%
   mutate(state = gsub(x = state,pattern = "\\&", replacement = "and") ) %>%
   mutate(state = trimws(state))%>%
-  mutate(state = tolower(state)) 
+  mutate(state = tolower(state)) %>%
+  mutate(age = trimws(age_group)) %>%
+  mutate(state = stringr::str_to_title(state) )
+  
+
 
 #----------------------------
 
@@ -233,6 +237,15 @@ last_3_dates <- stp_data_indus2 %>%
   distinct(date) %>% 
   filter(date %in% c(max(date) - weeks(8),max(date) - weeks(4),max(date) ) )
 
+max_stp_date <- max(last_3_dates$date)
+max_gva_date <- max(raw_industry_health_qtr$gva_date)
+
+month_diff <- lubridate::interval(as_date(max_stp_date), as_date(max_gva_date) ) %/% months(1) 
+
+raw_industry_health_qtr<- raw_industry_health_qtr %>%
+  mutate(month_date = month_date + months( abs(month_diff + 1) ) )
+
+
 stp_data_gdp <- stp_data_indus2 %>%
   filter(date %in% last_3_dates$date ) %>%
   left_join(raw_industry_health_qtr, by = c("industry","month_date") ) %>%
@@ -259,6 +272,65 @@ max_plot_gva_value <- stp_data_gdp %>%
   filter(gva_index == max(gva_index)) %>%
   select(gva_index)
 
+#----------------------------------------GET INDUSTRY SIZES
+
+industry_sizes <- .data[[33]][[2]] %>%
+  filter(unit == "000") %>%
+  filter(employment_status %in% c("Employed total", "Unemployed total") ) %>%
+  group_by(industry,date) %>%
+  summarise(
+    value = sum(value,na.rm = TRUE)
+  ) %>%
+  filter(date == max(date)) %>%
+  rename(
+    pop_size = value 
+  ) %>%
+  select(-date) %>%
+  mutate(industry = trimws(industry)) %>%
+  mutate(industry = stringr::str_remove(industry, "[:upper:]-") ) %>%
+  mutate(industry = gsub(x = industry,pattern = "\\&", replacement = "and") ) %>%
+  mutate(industry = trimws(industry))%>%
+  mutate(industry = tolower(industry)) %>%
+  mutate(industry = str_wrap(industry,15) ) %>%
+  mutate(industry = stringr::str_to_title(industry))
+
+#---------------------------JOIN ON INDUSTRY SIZE
+stp_data_gdp2 <- stp_data_gdp %>%
+  left_join(industry_sizes, by = "industry") 
+
+#-------------------------------------------------------------Complete Data
+
+
+#----------------------------------------------------------
+
+ stp_data_gdp2 %>% 
+  ggplot(aes(x = gva_index, y = difference_since_covid) ) +
+  #geom_ribbon(aes(ymin = -17, ymax = -0.1), alpha = 0.25, fill = "red")+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  geom_vline(xintercept = 0, linetype = "dashed")+
+  geom_point(aes(y =  latest_point, 
+                 size = pop_size,
+                 #color = difference_since_covid,
+                 group = industry ), 
+             show.legend = TRUE,color = "#003366") +
+  geom_line(aes(group = industry
+                #,color = difference_since_covid 
+                ),size = 0.75, show.legend = FALSE,color = "#003366") +
+  # geom_text(aes(x = -0.22,y = 10, label = "Labour Force Recovered\nIndustry GDP\nStruggling"), size = 3) +
+  # geom_text(aes(x = -0.22,y = -13, label = "Labour Force Not Recovered\nIndustry GDP\nStruggling"), size = 3) +
+  # geom_text(aes(x = 0.15,y = 10, label = "Labour Force Recovered\nIndustry GDP\nRecovered"), size = 3) +
+  # geom_text(aes(x = 0.15,y = -13, label = "Labour Force Not Recovered\nIndustry GDP\nRecovered"), size = 3) +
+  geom_label_repel(aes(label = label_x), size = 2.5,
+                   force_pull = 1, force = 40, show.legend = FALSE,segment.size = 0.25) +
+  #scale_color_gradient(  low = "#ff6600",  high = "#003366") +
+  ylim(min_plot_stp_value$difference_since_covid[1] - 0.01,12)+
+  theme_minimal() + 
+  ylab( ("Labour Force Index (Indexed from Feb 2020)\n[Pre-Covid - Current]") ) +
+  xlab( ("Gross Value Added\n[Pre-Covid - Current]") ) +
+  labs(size = "Labour Force\nSize ('000s')")+
+  theme(axis.title = element_text(size = 12),legend.position = "bottom")+
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1),
+                     limits = c(min_plot_gva_value$gva_index[1] - 0.02,0.17) ) 
+
 }
 
-#-----------------------------------------------------------------------------------------------

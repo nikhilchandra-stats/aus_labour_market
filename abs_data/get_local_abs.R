@@ -93,7 +93,7 @@ clean_stp_indus <- function(.data){
 
 clean_stp_national <- function(.data){
   
-  returned_data <- .data %>%
+  dat <- .data %>%
     as_tibble() %>%
     mutate(Industry.division = stringr::str_remove(string = Industry.division,pattern = "[[:digit:]]+") ) %>%
     mutate(Industry.division = stringr::str_remove(string = Industry.division,pattern = "\\.") ) %>%
@@ -101,18 +101,15 @@ clean_stp_national <- function(.data){
     mutate(`State.or.Territory` = stringr::str_remove(string = `State.or.Territory`,pattern = "\\.") ) %>%
     janitor::clean_names() %>%
     mutate_all( as.character) %>%
-    pivot_longer(-c(industry_division,state_or_territory),
+    pivot_longer(-c(industry_division,state_or_territory,sex,age_group),
                  values_to = "value", names_to = "date") %>%
     mutate(date = stringr::str_remove(date,"x")) %>%
     mutate(value = as.numeric(value)) %>%
     mutate(date = as_date(date))
   
-  return(returned_data)
+  return(dat)
   
 }
-
-
-
 
 #------------------------------STP DATA Industry
 
