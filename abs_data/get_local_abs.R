@@ -88,11 +88,11 @@ clean_stp_indus <- function(.data){
   return(returned_data)
   
 }
-
+dd
 #------------------------------STP DATA NATIONAL
 
 clean_stp_national <- function(.data){
-  
+  sdf
   dat <- .data %>%
     as_tibble() %>%
     mutate(Industry.division = stringr::str_remove(string = Industry.division,pattern = "[[:digit:]]+") ) %>%
