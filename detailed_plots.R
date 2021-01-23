@@ -72,16 +72,23 @@ dat <- .data
       full_part = ifelse(full_part == "full", "Full Time Employed","Part Time Employed" )
     )
   
-  total_jobs_remaining_lost <- plot_1_dat
-    
+  total_jobs_still_lost <- plot_1_dat %>%
+    ungroup() %>%
+    filter(month_date == max(month_date)) %>%
+    filter(max_value_people < -5) %>%
+    summarise(
+      max_value_people = sum(max_value_people,na.rm = TRUE)
+    )
+      
   
-  plot1 <- plot_1_dat %>%
+  
+  plot_1_dat %>%
     ggplot() + theme_minimal() + 
     geom_point(aes(x = max_value_people, y = max_value_hours ),
                show.legend = FALSE, alpha = 0.5, color = "#003366") +
     geom_hline(yintercept = -100, linetype = "dashed",size = 0.7) +
     geom_vline(xintercept = -5, linetype = "dashed",size = 0.7) +
-    geom_label(aes(y = -250, x = -17,label = "At risk cohorts"), color = "black" ) +
+    geom_text(aes(y = -250, x = -17,label = "At risk cohorts"),show.legend = FALSE,color = "black" ) +
     facet_wrap(sex~full_part) +
     xlab("Remaining Unrecovered Jobs") +
     ylab("Remaining Unrecovered Hours") 

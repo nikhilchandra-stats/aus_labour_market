@@ -12,8 +12,10 @@ library(shinyjs)
 library(pins)
 
 load("abs_data.RData")
+.data <- returned_data[[37]] %>%
+  pivot_longer(-c(month_date, sex, state,industry),values_to = "value", names_to = "employment_or_hours") 
 
-main_plot_premade <-   returned_data[[37]] %>%
+main_plot_premade <- returned_data[[37]] %>%
   pivot_longer(-c(month_date, sex, state,industry),values_to = "value", names_to = "employment_or_hours") %>%
   split(.$state) %>%
   purrr::map( ~ detailed_plot_forecast(.x) )
