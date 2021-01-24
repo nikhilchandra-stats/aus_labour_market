@@ -74,27 +74,73 @@ dat <- .data
   
   total_jobs_still_lost <- plot_1_dat %>%
     ungroup() %>%
+    group_by(sex,full_part) %>%
     filter(month_date == max(month_date)) %>%
-    filter(max_value_people < -5) %>%
     summarise(
-      max_value_people = sum(max_value_people,na.rm = TRUE)
+      people_lost = sum(max_value_people,na.rm = TRUE)
+    ) %>%
+    mutate(
+      people_lost = abs(people_lost)
     )
-      
   
+  at_risk_cohorts <- plot_1_dat %>%
+    ungroup() %>%
+    group_by(sex,full_part) %>%
+    filter(month_date == max(month_date)) %>%
+    summarise(
+      risk_cohorts = sum( ifelse(max_value_people < -5,max_value_people,NA), na.rm = TRUE  )/
+        sum(max_value_people,na.rm = TRUE)
+    ) %>%
+    mutate(
+      risk_cohorts = round( abs(risk_cohorts),2)*100
+    )
   
-  plot_1_dat %>%
-    ggplot() + theme_minimal() + 
+  plot_2_dat <-
+    plot_1_dat %>%
+    left_join(total_jobs_still_lost,by = c("sex","full_part")) %>%
+    left_join(at_risk_cohorts,by = c("sex","full_part") ) %>%
+    mutate(
+      label_main = paste0(risk_cohorts,"% cohorts are\nstill unrecovered\n",round(people_lost)," thousand"," jobs still\nnot recovered")
+    ) %>%
+    mutate(
+      label_main = ifelse(month_date == max(month_date),label_main,NA)
+    )
+  
+  plot_2_dat %>%
+    ggplot() + 
     geom_point(aes(x = max_value_people, y = max_value_hours ),
                show.legend = FALSE, alpha = 0.5, color = "#003366") +
     geom_hline(yintercept = -100, linetype = "dashed",size = 0.7) +
     geom_vline(xintercept = -5, linetype = "dashed",size = 0.7) +
-    geom_text(aes(y = -250, x = -17,label = "At risk cohorts"),show.legend = FALSE,color = "black" ) +
+    geom_text(aes(y = -350, x = -20,
+                  label = label_main ),
+              show.legend = FALSE,color = "darkblue",size = 3 ) +
+    theme_minimal() + 
     facet_wrap(sex~full_part) +
-    xlab("Remaining Unrecovered Jobs") +
-    ylab("Remaining Unrecovered Hours") 
+    xlab("Remaining Unrecovered Jobs (000)") +
+    ylab("Remaining Unrecovered Hours (000)") 
 
   
-  plot_2_dat <- plot_1_dat %>%
-    filter(!is.na(label_x))
+  plot_3_dat <- plot_2_dat %>%
+    filter(max_value_people < -6)
+  
+  cols_sex <- c("Males" = "#003366", "Females" = "#ff6600")
+  
+  
+  plot_3_dat %>%
+    filter(full_part == "Full Time Employed") %>%
+    mutate(state = str_wrap(state,10)) %>%
+    ggplot( aes(y = industry, x = round(abs(max_value_people),1), fill = sex  )  ) +
+    theme_minimal() + 
+    geom_col( )+
+    geom_text(aes(label = round(abs(max_value_people),1) ),
+              size = 4, position = position_stack(vjust = 0.5), colour = "white" ) +
+    scale_colour_manual(
+      values = cols_sex,
+      aesthetics = c("colour", "fill")
+    ) +
+    theme(axis.text.y = element_text(size = 7), axis.title.y = element_blank())+
+    facet_grid(vars(state),scales = "free",space = "free") +
+    xlab("Remaining Unrecovered Jobs (000)")
   
 }  
