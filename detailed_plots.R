@@ -1,3 +1,7 @@
+# load("abs_data.RData")
+# 
+# .data <- returned_data[[37]] %>%
+#   pivot_longer(-c(month_date, sex, state,industry),values_to = "value", names_to = "employment_or_hours") 
 
 detailed_plot_forecast <- function(.data){
   
@@ -106,7 +110,7 @@ dat <- .data
       label_main = ifelse(month_date == max(month_date),label_main,NA)
     )
   
-  plot_2_dat %>%
+  risk_matrix_plot <- plot_2_dat %>%
     ggplot() + 
     geom_point(aes(x = max_value_people, y = max_value_hours ),
                show.legend = FALSE, alpha = 0.5, color = "#003366") +
@@ -116,7 +120,7 @@ dat <- .data
                   label = label_main ),
               show.legend = FALSE,color = "darkblue",size = 3 ) +
     theme_minimal() + 
-    facet_wrap(sex~full_part) +
+    facet_wrap(sex~full_part, scales = "free") +
     xlab("Remaining Unrecovered Jobs (000)") +
     ylab("Remaining Unrecovered Hours (000)") 
 
@@ -127,20 +131,22 @@ dat <- .data
   cols_sex <- c("Males" = "#003366", "Females" = "#ff6600")
   
   
-  plot_3_dat %>%
+  bar_plot <- plot_3_dat %>%
     filter(full_part == "Full Time Employed") %>%
     mutate(state = str_wrap(state,10)) %>%
     ggplot( aes(y = industry, x = round(abs(max_value_people),1), fill = sex  )  ) +
     theme_minimal() + 
     geom_col( )+
     geom_text(aes(label = round(abs(max_value_people),1) ),
-              size = 4, position = position_stack(vjust = 0.5), colour = "white" ) +
+              size = 6, position = position_stack(vjust = 0.5), colour = "white" ) +
     scale_colour_manual(
       values = cols_sex,
       aesthetics = c("colour", "fill")
     ) +
-    theme(axis.text.y = element_text(size = 7), axis.title.y = element_blank())+
+    theme(axis.text.y = element_text(size = 10), axis.title.y = element_blank())+
     facet_grid(vars(state),scales = "free",space = "free") +
     xlab("Remaining Unrecovered Jobs (000)")
+  
+  return(list(risk_matrix_plot,bar_plot))
   
 }  

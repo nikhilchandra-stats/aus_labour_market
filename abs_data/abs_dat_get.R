@@ -12,9 +12,9 @@ stp_national <- read.xlsx("abs_data/stp_national-2021-01-20.xlsx",sheet = 2,star
 
 returned_data <- c(abs_data,list(stp_data_indus), list(stp_national))
 
-returned_data[[37]] <- indus_occ_gender_state
+# returned_data[[37]] <- indus_occ_gender_state
 
 save(returned_data,file = "abs_data.RData")
-save(returned_data,file = "temp_dta.RData")
+# save(returned_data,file = "temp_dta.RData")
 
 
