@@ -28,8 +28,8 @@ library("tidyverse")
 #-------------------- global variables --------------------
 
 G_timestamp_declaration <- now()
-G_output_path <- onedrive("outputs")
-G_input_path  <- onedrive("data\\raw")
+# G_output_path <- onedrive("outputs")
+# G_input_path  <- onedrive("data\\raw")
 
 # # For testing purposes:
 # G_timestamp_declaration <- parse_date_time("2020-12-09 06:30:00", orders = "ymd HMS", tz = "Australia/Sydney")

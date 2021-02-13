@@ -20,9 +20,12 @@ library(shiny)
 library(shinyjs)
 library(pins)
 
-source("detailed_plots.R")
+board_register_kaggle(token = "data cleaning/kaggle.json")
+location <- pin_get(name = "abs-dat",board = "kaggle",extract = TRUE,cache = FALSE,files = TRUE)
+abs_dat <- readRDS(location)
 
-load("abs_data.RData")
+
+source("detailed_plots.R")
 
 # .data <- returned_data[[37]] %>%
 #   pivot_longer(-c(month_date, sex, state,industry),values_to = "value", names_to = "employment_or_hours") 
