@@ -1,6 +1,6 @@
 # load("abs_data.RData")
 # 
-#.data <- abs_dat[[31]][[2]]
+.data <- abs_dat[[31]][[2]]
 
 detailed_plot_forecast <- function(.data){
  
@@ -27,7 +27,7 @@ detailed_plot_forecast <- function(.data){
     theme(
       axis.title = element_blank(),
       axis.text = element_text(size = 6)
-    )w
+    )
     
   
   dat_full_time %>%    
