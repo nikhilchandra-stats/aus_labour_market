@@ -41,21 +41,33 @@ detailed_plot_forecast <- function(.data){
                 values_from = .data$value) %>%
     ungroup() %>%
     mutate(
-      difference_value = ifelse(quarter_date == max(quarter_date), covid - `pre-covid`, NA)
+      difference_value = ifelse(quarter_date == max(quarter_date), covid - `pre-covid`, NA),
+      label_value = ifelse(quarter_date == max(quarter_date),
+                           paste0( round(.data$difference_value),"000\nhours" ), 
+                           NA)
+      
     ) %>%
     mutate(
       label_y = 
         ifelse(difference_value < 0,
                (covid + `pre-covid`)/2, 
                (covid + `pre-covid`)/2 )
-    ) %>%
-    mutate(
-      transition_date_red = ifelse(.data$covid <= .data$`pre-covid`, ymd(.data$quarter_date),
-                                   as_date("1900-01-01") ),
-      transition_date_green = ifelse(.data$covid <= .data$`pre-covid`, 
-                                     ymd(.data$quarter_date),
-                                     as_date("1900-01-01") ) 
-    )
+    ) 
+  max_date <- max(plotting_lost_comparison$quarter_date)
+  
+  get_extra_points1 <- plotting_lost_comparison %>%
+    mutate(quarter_date = quarter_date + months(1)) %>%
+    mutate(label_value = NA,
+           label_y = NA)
+  get_extra_points2 <- get_extra_points1 %>%
+    mutate(quarter_date = quarter_date + months(1)) %>%
+    bind_rows(get_extra_points1) %>%
+    mutate(label_value = NA,
+           label_y = NA)
+  
+  plotting_lost_comparison2 <- plotting_lost_comparison %>%
+    bind_rows(get_extra_points2)
+  
   
 plot_occ <- function(.data){
   
@@ -65,40 +77,28 @@ plot_occ <- function(.data){
     cah_plot(aes(x = .data$quarter_date)) +
     geom_line(aes(y = .data$covid)) +
     geom_line(aes(y = .data$`pre-covid`), linetype = "dashed") +
-    geom_point(aes(y = .data$covid)) +
-    geom_point(aes(y = .data$`pre-covid`), linetype = "dashed") +
-    facet_wrap(. ~ .data$occupation, scales = "free") +
+    facet_wrap(. ~ .data$occupation, scales = "free",nrow = 1) +
     geom_ribbon(
-       data = filter(.data, .data$covid < .data$`pre-covid`),
+      data = filter(.data, covid < `pre-covid`),
       aes(ymax = `pre-covid`,
-          ymin = covid),
-      alpha = 0.20,
-      fill = "darkred"
+          ymin = covid
+          #fill = `pre-covid` > covid
+          ),
+      fill = "darkred",
+      alpha = 0.20
+     # show.legend = FALSE
     ) +
-    # geom_ribbon(
-    #   data = filter(.data, `pre-covid` >= covid),
-    #   aes(ymax = `pre-covid`,
-    #       ymin = covid),
-    #   alpha = 0.20,
-    #   fill = "darkred"
-    # ) +
-    # geom_ribbon(
-    #   data = filter(.data, `pre-covid` < covid),
-    #   aes(ymin = `pre-covid`,
-    #       ymax = covid),
-    #   alpha = 0.20,
-    #   fill = "darkgreen"
-    # )  +
-    geom_text(aes(y = .data$label_y, label = round(.data$difference_value) ),
-                    nudge_x = -15,
-              size = 2.5) +
+    #scale_fill_manual(values=c("darkgreen", "darkred"), name="fill" )+
+    geom_text(aes(y = .data$label_y, label = label_value ),
+                    nudge_x = 0,
+              size = 1.5) +
     theme(
       axis.title.x = element_blank(),
       axis.title.y = element_blank(),
       axis.text.y = element_text(size = 5),
       axis.text.x = element_text(size = 5),
       legend.title = element_blank(),
-      strip.text = element_text(size = 4)
+      strip.text = element_blank()
     )
   
   return(plot_dat)
@@ -106,7 +106,7 @@ plot_occ <- function(.data){
 
 
 plots_by_indus <- 
-  plotting_lost_comparison %>%
+  plotting_lost_comparison2 %>%
   mutate(occupation = str_wrap(.data$occupation,15)) %>%
   split(.$industry) %>%
   map(plot_occ)
@@ -116,7 +116,7 @@ for (i in 1:length(plots_by_indus) ) {
   plot_name <- str_trim( as.character(names(plots_by_indus)[i]) )
   plots_by_indus[[i]] %>%
     ggsave(filename = glue::glue("plots/",plot_name,".png"),dpi = 400,device = "png",scale = 1,
-           width = 3,height = 3  )
+           width = 12.58,height = 1.15  )
   
 }
   
