@@ -21,7 +21,7 @@ library(shinyjs)
 library(pins)
 
 board_register_kaggle(token = "data cleaning/kaggle.json")
-location <- pin_get(name = "abs-dat",board = "kaggle",extract = TRUE,cache = FALSE,files = TRUE)
+location <- pin_get(name = "abs-dat",board = "kaggle",extract = TRUE,cache = TRUE,files = TRUE)
 abs_dat <- readRDS(location)
 
 
