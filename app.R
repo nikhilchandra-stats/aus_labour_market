@@ -24,7 +24,6 @@ board_register_kaggle(token = "data cleaning/kaggle.json")
 location <- pin_get(name = "abs-dat",board = "kaggle",extract = TRUE,cache = TRUE,files = TRUE)
 abs_dat <- readRDS(location)
 
-
 source("detailed_plots.R")
 
 # .data <- returned_data[[37]] %>%
