@@ -921,28 +921,50 @@ eco_tables_abs <- function(long_or_wide = "wide"){
   return_list[[36]] = list("STP" ,stp )
   
   #--------------------------------STP
-  stp_state <- 
-    readabs::download_abs_data_cube(catalogue_string = "weekly-payroll-jobs-and-wages-australia", 
-                                    cube = "6160055001_DO005") %>%
-    read.xlsx(sheet = 2,startRow = 6,detectDates = TRUE) %>%
-    as_tibble() %>%
-    mutate(`State.or.Territory` = stringr::str_remove(string = `State.or.Territory`,pattern = "[[:digit:]]+") ) %>%
-    mutate(`State.or.Territory` = stringr::str_remove(string = `State.or.Territory`,pattern = "\\.") ) %>%
-    janitor::clean_names() %>%
-    mutate_all( as.character) %>%
-    pivot_longer(-c(state_or_territory),
-                 values_to = "value", names_to = "date") %>%
-    mutate(date = stringr::str_remove(date,"x")) %>%
-    mutate(value = as.numeric(value)) %>%
-    mutate(date = as_date(date))
-  
-  
-  return_list[[37]] = list("STP state" ,stp_state )
-  
-  return(return_list)    
-  
   #----------------------------------------------------------------
   
+  dta_emp_15_24<- readabs::read_abs("6202", tables = c("16") )%>%
+    dplyr::select(date,series,value,unit,series_type)
   
+  dta_emp_15_24_col_1 <- data.frame( stringr::str_split_fixed(  dta_emp_15_24$series,pattern = ";",n = 7 ) )[,1:3] %>%
+    dplyr::mutate(dplyr::across(where(is.character), ~ stringr::str_remove(.x,">")) ) %>%
+    dplyr::mutate(dplyr::across(where(is.character), ~ stringr::str_remove(.x,">")) )
+  
+  dta_emp_15_24_2 <-   dta_emp_15_24 %>%
+    dplyr::select(date,value,unit,series_type) %>%
+    dplyr::bind_cols(dta_emp_15_24_col_1) %>%
+    dplyr::rename(state = X1, employment_status = X2, employment_status_2 = X3)
+  
+  dta_emp_15_24_3 <-
+    dta_emp_15_24_2 %>%
+    dplyr::mutate(
+      #employment_status = stringr::str_trim(employment_status, side = "both"),
+      series_type = stringr::str_trim(series_type, side = "both"),
+      unit = stringr::str_trim(unit, side = "both"),
+      state = stringr::str_trim(state, side = "both"),
+      employment_status = stringr::str_trim(employment_status, side = "both"),
+      employment_status_2 = stringr::str_trim(employment_status_2, side = "both"),
+      date = lubridate::as_date(date)
+    ) 
+  
+  return_list[[38]] = list("6302.0 table 16 LF status" ,dta_emp_15_24_3 )
+  
+  #----------------------------------------------------------
+  indus_occ_gender_state <- 
+    readabs::download_abs_data_cube(catalogue_string = "labour-force-australia-detailed", cube = "EQ06" 
+    ) %>%read.xlsx(sheet = 3,startRow = 4,detectDates = TRUE) %>%
+    as_tibble() 
+  
+  names(indus_occ_gender_state) = c("month_date","sex","state",
+                                    "industry","full_time",
+                                    "part_time","hours_full_time","hours_part_time")
+  
+  indus_occ_gender_state2 <- indus_occ_gender_state %>%
+    mutate(industry = trimws(industry) ) %>%
+    mutate(state = trimws(state))%>%
+    mutate(sex = trimws(sex))%>%
+    mutate(industry = gsub(x = industry,pattern = "\\&", replacement = "and") )
+  
+  return_list[[39]]
   
 }
